@@ -16,7 +16,6 @@ class TriviaTestCase(unittest.TestCase):
         self.app = create_app()
         self.client = self.app.test_client
         self.database_name = database_name
-        # self.database_path = "postgres://{}:{}@{}/{}".format('postgres', 'postgres','localhost:5432', self.database_name)
         self.database_path = "postgresql://postgres:1234@localhost:5432/trivia"
         setup_db(self.app, self.database_path)
 
@@ -35,8 +34,8 @@ class TriviaTestCase(unittest.TestCase):
             "category": 2
         }
         # failure to submit a new question (negative test)
+        # missing difficulty
         self.fail_add_question = {
-            # 'difficulty' is missing!
             "question": "What planet is closed to the sun?",
             "answer": "Mercury",
             "category": 1
@@ -48,15 +47,14 @@ class TriviaTestCase(unittest.TestCase):
             "previous_questions":[5,]
         }
     
-        #error for input to play game (negative test)
         self.error_play_quiz = {
-            "quiz_category":"Entertainment",
+            "quiz_category":"History",
             "previous_questions":[5,]
         }
 
         self.wrongdata_play_quiz = {
-            "field01":"Something not existing",
-            "field02":"Something else not existing"
+            "01":"Dump content",
+            "02":"Still dump content"
         }
 
     def tearDown(self):
@@ -221,12 +219,12 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data["success"], False)
         self.assertEqual(data["message"], "resource not found")
 
-    # def test_play_game(self):
-    #     response = self.client().post("/quizzes", json=self.play_quiz)
-    #     data = json.loads(response.data)
+    def test_play_game(self):
+        response = self.client().post("/quizzes", json=self.play_quiz)
+        data = json.loads(response.data)
 
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(data["success"], True)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(data["question"]))
 
     def test_404_play_game(self):
         response = self.client().post("/quizzes", json=self.error_play_quiz)

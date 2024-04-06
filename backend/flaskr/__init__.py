@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, abort, jsonify
+from flask import Flask, request, abort, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import random
@@ -245,37 +245,38 @@ def create_app(test_config=None):
     one question at a time is displayed, the user is allowed to answer
     and shown whether they were correct or not.
     """
-    @app.route("/quizzez", methods = ["POST"])
+    @app.route("/quizzes", methods = ["POST"])
     def quizz_questions():
         try:
-            body = request.get_json()
-            if isinstance(body['quiz_category'], dict):
-                category_type = body['quiz_category']['id']
-            else:  # to suit the request sent using the CURL and test scripts
-                category_type = body['quiz_category']
+            # Get previous questions
+            previous_questions = request.json.get('previous_questions')
+            quiz_category = request.json.get('quiz_category')
+            print(quiz_category)
+            print(previous_questions)
 
-            previous_questions = body['previous_questions']
-
-            # if the category is "0", return all the questions
-            if category_type == 0:
-                questions = Question.query.filter(
-                    Question.id.notin_(previous_questions)).all()
-            # else return questions within the selected category.
-            elif category_type:
-                questions = Question.query.filter(
-                    Question.category == category_type,
-                    Question.id.notin_(previous_questions)).all()
-
-            # else return random question from available questions
-            if len(questions) > 0:
-                question = random.choice(questions).format()
-            # if the category is not available
+            # Get available questions
+            if quiz_category != 0:
+                questions = Question.query.filter_by(category = quiz_category).all()
             else:
-                question = None
-            
+                questions = Question.query.all()
+
+            # Get chosen one
+            chosen_question = random.choice(questions)
+            while(chosen_question.id in previous_questions):
+                chosen_question = random.choice(questions)
+            print(chosen_question.id)
+
+            # Export the deserved item
+            question_data = {
+                "id": chosen_question.id,
+                "question": chosen_question.question,
+                "answer": chosen_question.answer,
+                "difficulty": chosen_question.difficulty,
+                "category": chosen_question.category
+            }
             return jsonify({
-                "question": question
-                })
+                "question": question_data
+            })
         except:
             abort(404)
     """
