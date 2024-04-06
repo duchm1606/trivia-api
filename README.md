@@ -16,4 +16,4 @@ At the end, user of the app should be able to
 
 ## Initial Instruction
 
-See
+See [Instruction](https://github.com/itsnot-aduck/trivia-api/blob/main/INSTRUCTION.md) given by Udacity
