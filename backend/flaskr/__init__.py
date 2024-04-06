@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import random
 
-from models import setup_db, Question, Category
+from models import setup_db, Question, Category, db
 
 QUESTIONS_PER_PAGE = 10
 
@@ -105,15 +105,22 @@ def create_app(test_config=None):
     def delete_question(question_id):
         try:
             question = Question.query.filter(Question.id == question_id).one_or_none()
+            print(question)
             if question is None:
                 abort(404)
-            question.detele()
+            # An exception occured. I don't know why    
+            # question.detele()
+
+            db.session.delete(question)
+            db.session.commit()
 
             print("Hello")
             return jsonify({
                 "deleted": question_id
             }), 200
         except:
+            db.session.rollback()
+            db.session.close()
             abort(422)    
     """
     Create an endpoint to POST a new question,
@@ -199,7 +206,7 @@ def create_app(test_config=None):
     @app.route("/categories/<int:category_id>/questions")
     def get_questions_by_category(category_id):
         try:
-            current_questions = Question.query.filter(Question.category == str(category_id))
+            current_questions = Question.query.filter(Question.category == str(category_id)).all()
             category = Category.query.filter(Category.id == category_id).one_or_none()
             currentCategory = None
             if category is not None:
@@ -219,7 +226,7 @@ def create_app(test_config=None):
                 "questions": questions,
                 "totalQuestions": len(current_questions),
                 "currentCategory": currentCategory
-            })
+            }), 200
         except:
             abort(404)
     """
@@ -235,44 +242,37 @@ def create_app(test_config=None):
     """
     @app.route("/quizzez", methods = ["POST"])
     def quizz_questions():
-        body = request.get_json()
-        previous_question = body.get("previous_questions", None)
-        quiz_category = body.get("quiz_category", None)
         try:
-            all_questions = list()
-            next_question = None
-            current_category = None
+            body = request.get_json()
+            if isinstance(body['quiz_category'], dict):
+                category_type = body['quiz_category']['id']
+            else:  # to suit the request sent using the CURL and test scripts
+                category_type = body['quiz_category']
 
-            if quiz_category:
-                current_category = Category.query.filter(Category.id == int(quiz_category.get('id',None))).one_or_none()
+            previous_questions = body['previous_questions']
 
-            if not current_category and (not quiz_category or int(quiz_category.get('id',None)) == 0):
-                all_questions = [quest.id for quest in Question.query.all()]
+            # if the category is "0", return all the questions
+            if category_type == 0:
+                questions = Question.query.filter(
+                    Question.id.notin_(previous_questions)).all()
+            # else return questions within the selected category.
+            elif category_type:
+                questions = Question.query.filter(
+                    Question.category == category_type,
+                    Question.id.notin_(previous_questions)).all()
 
-            elif current_category:
-                all_questions = [quest.id for quest in Question.query.filter(Question.category == str(current_category.id))]
-            
-            if not previous_question:
-                previous_question = list()
-
-            if len(previous_question) >= len(all_questions) and current_category:
-                return jsonify({})
-            
-            question_id = random.choice(all_questions)
-
-            if not current_category:
-                next_question = Question.query.filter(Question.id == question_id).one_or_none()
+            # else return random question from available questions
+            if len(questions) > 0:
+                question = random.choice(questions).format()
+            # if the category is not available
             else:
-                next_question = Question.query.filter(Question.id == question_id,
-                                                      Question.category == str(current_category.id)).one_or_none()
-            if not next_question:
-                abort(404)
-
+                question = None
+            
             return jsonify({
-                    "question": next_question.format()
-            })
+                "question": question
+                })
         except:
-            abort(422)
+            abort(404)
     """
     Create error handlers for all expected errors
     including 404 and 422.
