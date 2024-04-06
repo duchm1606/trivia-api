@@ -103,25 +103,22 @@ def create_app(test_config=None):
     """
     @app.route('/questions/<int:question_id>', methods=['DELETE'])
     def delete_question(question_id):
-        try:
-            question = Question.query.filter(Question.id == question_id).one_or_none()
-            print(question)
-            if question is None:
-                abort(404)
-            # An exception occured. I don't know why    
-            # question.detele()
-
-            db.session.delete(question)
-            db.session.commit()
-
-            print("Hello")
-            return jsonify({
-                "deleted": question_id
-            }), 200
-        except:
-            db.session.rollback()
-            db.session.close()
-            abort(422)    
+        question = Question.query.filter(Question.id == question_id).one_or_none()
+        print(question)
+        if question is None:
+            print("Not found")
+            abort(404)
+        else:
+            try:
+                db.session.delete(question)
+                db.session.commit()
+                return jsonify({
+                    "deleted": question_id
+                }), 200
+            except:
+                db.session.rollback()
+                db.session.close()
+                abort(422)    
     """
     Create an endpoint to POST a new question,
     which will require the question and answer text,
@@ -155,24 +152,26 @@ def create_app(test_config=None):
             # Check for 2 case: find or create 
             if search:
                 selection = Question.query.order_by(Question.id).filter(
-                    Question.question.ilike(f'{search}')
-                )
+                    Question.question.ilike(f'%{search}%')
+                ).all()
+
+                print(selection)
 
                 if len(selection) == 0:
                     abort(404)
                 else:
-                    #paginate
+                    #paginate 
                     current_questions = paginate_questions(request, selection)
                     # Dump current_category
                     current_category = 'Entertainment'
                     questions = []
                     for question in current_questions:
                         questions.append({
-                            "id": question.id,
-                            "question": question.question,
-                            "answer": question.answer,
-                            "difficulty": question.difficulty,
-                            "category": question.category
+                            "id": question["id"],
+                            "question": question["question"],
+                            "answer": question["answer"],
+                            "difficulty": question["difficulty"],
+                            "category": question["category"]
                         })
                     # Dump current category
                     return jsonify({
@@ -183,15 +182,18 @@ def create_app(test_config=None):
             
             else:
                 # Check for valid question or answer
-                if len(new_question) == 0 or len(new_answer == 0):
+                if len(new_question) == 0 or len(new_answer) == 0 or new_category == 0 or new_difficulty is None:
                     abort(422)
 
                 question = Question(new_question, new_answer, new_category, new_difficulty)
-                question.insert()
+                db.session.add(question)
+                db.session.commit()
                 
                 # Return nothing
-                return jsonify({})
+                return jsonify({}), 200
         except:
+            db.session.rollback()
+            db.session.close()
             abort(422)
 
 
@@ -206,7 +208,10 @@ def create_app(test_config=None):
     @app.route("/categories/<int:category_id>/questions")
     def get_questions_by_category(category_id):
         try:
-            current_questions = Question.query.filter(Question.category == str(category_id)).all()
+            selection = Question.query.filter(Question.category == str(category_id)).all()
+            current_questions = paginate_questions(request,selection)
+            if len(current_questions) == 0:
+                abort(404)
             category = Category.query.filter(Category.id == category_id).one_or_none()
             currentCategory = None
             if category is not None:
@@ -216,11 +221,11 @@ def create_app(test_config=None):
             questions = []
             for question in current_questions:
                 questions.append({
-                    "id": question.id,
-                    "question": question.question,
-                    "answer": question.answer,
-                    "difficulty": question.difficulty,
-                    "category": question.category
+                    "id": question["id"],
+                    "question": question["question"],
+                    "answer": question["answer"],
+                    "difficulty": question["difficulty"],
+                    "category": question["category"]
                 })
             return jsonify({
                 "questions": questions,
