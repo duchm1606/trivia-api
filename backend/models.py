@@ -8,7 +8,7 @@ from settings import DB_NAME, DB_USER, DB_PASSWORD, DB_HOST
 
 
 database_name = DB_NAME
-database_path = "postgresql://{}:{}@{}/{}".format(DB_USER, DB_PASSWORD, DB_HOST, DB_NAME)
+database_path = "postgresql://{}:{}@{}/{}".format(DB_USER, DB_PASSWORD, DB_HOST, database_name)
 db = SQLAlchemy()
 
 """
