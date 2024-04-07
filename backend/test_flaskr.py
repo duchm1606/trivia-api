@@ -41,12 +41,9 @@ class TriviaTestCase(unittest.TestCase):
             "answer": "Mercury",
             "category": 1
         }
-
+        # {'type': 'click', 'id': 0} 
         #input for play game (positive test)
-        self.play_quiz = {
-            "quiz_category":5,
-            "previous_questions":[5,]
-        }
+        self.play_quiz = {'previous_questions': [], 'quiz_category': {'type': 'Art', 'id': '2'}}
     
         self.error_play_quiz = {
             "quiz_category":"History",
@@ -221,14 +218,14 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data["message"], "resource not found")
 
     def test_play_game(self):
-        response = self.client().post("/play", json=self.play_quiz)
+        response = self.client().post("/quizzes", json=self.play_quiz)
         data = json.loads(response.data)
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(data["question"]))
 
     def test_404_play_game(self):
-        response = self.client().post("/play", json=self.error_play_quiz)
+        response = self.client().post("/quizzes", json=self.error_play_quiz)
         data = json.loads(response.data)
 
         self.assertEqual(response.status_code, 404)
@@ -236,7 +233,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data["message"], "resource not found")
 
     def test_422_play_game(self):
-        response = self.client().post('/play', json=self.wrongdata_play_quiz)
+        response = self.client().post('/quizzes', json=self.wrongdata_play_quiz)
         data = json.loads(response.data)
 
         self.assertEqual(response.status_code, 404)

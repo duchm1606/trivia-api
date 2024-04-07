@@ -245,13 +245,16 @@ def create_app(test_config=None):
     one question at a time is displayed, the user is allowed to answer
     and shown whether they were correct or not.
     """
-    @app.route("/play", methods = ["POST"])
+    @app.route("/quizzes", methods = ["POST"])
     def quizz_questions():
         try:
+            body = request.get_json()
+            print(body)
             # Get previous questions
-            previous_questions = request.json.get('previous_questions')
-            quiz_category = request.json.get('quiz_category')
-            print(quiz_category)
+            previous_questions = body.get('previous_questions')
+            # Quiz_category returns a json so we just take the id
+            quiz_category = body.get('quiz_category').get('id')
+            print(request.json.get('quiz_category'))
             print(previous_questions)
 
             # Get available questions
