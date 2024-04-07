@@ -221,14 +221,14 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data["message"], "resource not found")
 
     def test_play_game(self):
-        response = self.client().post("/quizzes", json=self.play_quiz)
+        response = self.client().post("/play", json=self.play_quiz)
         data = json.loads(response.data)
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(data["question"]))
 
     def test_404_play_game(self):
-        response = self.client().post("/quizzes", json=self.error_play_quiz)
+        response = self.client().post("/play", json=self.error_play_quiz)
         data = json.loads(response.data)
 
         self.assertEqual(response.status_code, 404)
@@ -236,7 +236,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data["message"], "resource not found")
 
     def test_422_play_game(self):
-        response = self.client().post('/quizzes', json=self.wrongdata_play_quiz)
+        response = self.client().post('/play', json=self.wrongdata_play_quiz)
         data = json.loads(response.data)
 
         self.assertEqual(response.status_code, 404)
