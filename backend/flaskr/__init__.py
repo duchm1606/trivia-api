@@ -249,13 +249,12 @@ def create_app(test_config=None):
     def quizz_questions():
         try:
             body = request.get_json()
-            print(body)
+            # print(body)
             # Get previous questions
             previous_questions = body.get('previous_questions')
             # Quiz_category returns a json so we just take the id
             quiz_category = body.get('quiz_category').get('id')
-            print(request.json.get('quiz_category'))
-            print(previous_questions)
+            # print(request.json.get('quiz_category'))
 
             # Get available questions
             if quiz_category != 0:
@@ -263,11 +262,16 @@ def create_app(test_config=None):
             else:
                 questions = Question.query.all()
 
+            # Check if the user has answered all the questions 
+            if (len(previous_questions) == len(questions)):
+                # Return nothing because the front-end will check
+                # forceEnd: result.question ? false : true,
+                return jsonify({
+                })
             # Get chosen one
             chosen_question = random.choice(questions)
             while(chosen_question.id in previous_questions):
                 chosen_question = random.choice(questions)
-            print(chosen_question.id)
 
             # Export the deserved item
             question_data = {
